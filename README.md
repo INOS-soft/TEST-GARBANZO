@@ -813,4 +813,4 @@ const Counter = () => {
 	return <Text color="green">{counter} tests passed</Text>;
 };
 
-render(<Counter />);
+render(<Counter 3/>);
