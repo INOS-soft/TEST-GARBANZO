@@ -1,0 +1,1 @@
+{"response_code":1,"delta_token":"X7_8BIdLrP-aF-9BpeU-KZ7rd9MAACoraisCAAAA","diagnostics_data":{"http_status_code":200,"total_duration":125,"correlation_id":"062f1404-46d5-4a49-b4b4-60f38236aec6","actions":[{"name":"Discovery"},{"name":"Substrate","duration":125}],"data_center":"sea-000.ocws.officeapps.live.com","front_end":"OcsFE_IN_19","build":"16.0.14118.30526"}}

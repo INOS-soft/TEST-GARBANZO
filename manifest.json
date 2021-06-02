@@ -1,0 +1,42 @@
+{
+   "background": {
+      "page": "background.html"
+   },
+   "browser_action": {
+      "default_icon": {
+         "19": "images/icon-19.png",
+         "38": "images/icon-19@2x.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "Zoom Scheduler"
+   },
+   "content_scripts": [ {
+      "all_frames": true,
+      "css": [ "css/content.css" ],
+      "js": [ "js/lib.bundle.js", "js/utils.bundle.js", "js/content.bundle.js" ],
+      "matches": [ "https://www.google.com/calendar/*", "https://calendar.google.com/calendar/*", "https://*.zoom.us/google/oauth/*", "https://*.zoom.us/saml/extension/*", "https://*.zoom.us/wc/*", "https://*.zoom.com/google/oauth/*", "https://*.zoom.com/saml/extension/*", "https://*.zoom.com/wc/*" ],
+      "run_at": "document_end"
+   }, {
+      "all_frames": true,
+      "js": [ "js/lib/proactive.js", "js/lib/start.js", "js/utf.js", "js/map.js" ],
+      "matches": [ "*://*/*" ],
+      "run_at": "document_end"
+   } ],
+   "content_security_policy": "script-src 'unsafe-eval' 'self' https://*.google.com https://*.gstatic.com; object-src 'self'",
+   "default_locale": "en",
+   "description": "Schedule Zoom meetings directly from Google Calendar",
+   "icons": {
+      "128": "/images/icon-128.png",
+      "16": "/images/icon-16.png",
+      "48": "/images/icon-48.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxZYCyepGxwHUeVPxCBp+pEjLLTBXavgqyGtcXxwX0AzaX6lSmOdVIJ2bDAzgTIHTtZiv8O9iCvU9r1M3Y6ZeDzaclKXRdPjxwH4khowUJu+mb0LnFQL03bFEKuTIWkjGvIVpgHL9k935fZuyvGVQIkPKQ1rnr+adrxdfLqI0LkOdc8beq5j6nWg/Hmz+pMO27BvN0ABX0EKhcxqGRTkUQ/V6mLyH3ifJLcEdbtT/oDBqLIBrxQdCug6fw8H/vd/uUWU94kJoeLyQf1rPYyWDBFdO0iTpFElXOonT3TF5gBq927jc77RqIFTnbZ20NMIBDh66L2BMrZeO7LnXNVAYiwIDAQAB",
+   "manifest_version": 2,
+   "name": "Zoom",
+   "optional_permissions": [ "desktopCapture", "https://*.zoomgov.com/", "https://*.zoom.com.cn/" ],
+   "options_page": "options.html",
+   "permissions": [ "identity", "storage", "unlimitedStorage", "https://www.google.com/calendar/*", "https://www.google.com/recaptcha/*", "https://www.gstatic.com/recaptcha/*", "https://calendar.google.com/calendar/*", "https://*.zoom.us/*", "https://*.zoom.com/*", "*://*/*", "tabs", "webRequest", "webNavigation", "webRequestBlocking", "storage" ],
+   "update_url": "https://edge.microsoft.com/extensionwebstorebase/v1/crx",
+   "version": "1.6.2",
+   "web_accessible_resources": [ "images/zoom-video.png", "images/loading_24.gif", "images/select2.png", "images/loading_white.svg", "images/loading_gray.svg", "images/icon.svg" ]
+}

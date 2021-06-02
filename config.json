@@ -1,0 +1,21 @@
+{
+	"SettingsService": {
+		"systemSettings": {
+			"themeVibrancy": "light",
+			"highContrast": false,
+			"systemAccent": "",
+			"launchOnStartup": {
+				"windowsStartupTask": {
+					"state": null,
+					"error": null
+				},
+				"electronLoginItemSettings": null,
+				"loginItemSettings": {
+					"openAtLogin": false,
+					"wasOpenedAtLogin": true
+				}
+			},
+			"notificationSettings": null
+		}
+	}
+}
