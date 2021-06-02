@@ -1,23 +1,9 @@
 {
-    "compilerOptions": {
-        "declaration": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "lib": [
-            "es2017"
-        ],
-        "moduleResolution": "node",
-        "module": "commonjs",
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "sourceMap": true,
-        "target": "es6",
-        "outDir": "./dist"
-    },
-    "include": [
-        "src/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+	"extends": "@sindresorhus/tsconfig",
+	"compilerOptions": {
+		"esModuleInterop": true,
+		"outDir": "build",
+		"sourceMap": true
+	},
+	"include": ["src"]
 }
