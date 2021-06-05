@@ -1,104 +1,102 @@
-__Build Status:__ [![Build status](https://build.powershell.org/guestAuth/app/rest/builds/buildType:(id:Pester_TestPester)/statusIcon)](https://build.powershell.org/project.html?projectId=Pester&tab=projectOverview&guest=1)
+# How to run, organize and write tests?
 
-Pester 3.0 has been released!  To see a list of changes in this version, refer to the [What's New in Pester 3.0?](https://github.com/pester/Pester/wiki/What's-New-in-Pester-3.0) Wiki page.
+As framework deals with significant technical debt baggage many of currently configured tests do not
+resemble practise we want to follow in newly introduced tests.
 
----
+Please follow this document as the only guideline, it also provides links to tests that serve as a good example to replicate
 
-Pester
-=======
-Pester provides a framework for **running unit tests to execute and validate PowerShell commands from within PowerShell**. Pester consists of a simple set of functions that expose a testing domain-specific language (DSL) for isolating, running, evaluating and reporting the results of PowerShell commands.
+## Unit tests
 
-Pester tests can execute any command or script that is accessible to a Pester test file. This can include functions, cmdlets, modules and scripts. Pester can be run in *ad-hoc* style in a console or **it can be integrated into the build scripts of a continuous integration (CI) system**.
+Tests are configured with [Mocha](https://mochajs.org/) test framework, and can be run with following command
 
-**Pester also contains a powerful set of mocking functions** in which tests mimic any command functionality within the tested PowerShell code.
-
-A Pester Test
--------------
-BuildChanges.ps1
-
-```powershell
-
-function Build ($version) {
-  write-host "A build was run for version: $version"
-}
-
-function BuildIfChanged {
-  $thisVersion=Get-Version
-  $nextVersion=Get-NextVersion
-  if($thisVersion -ne $nextVersion) {Build $nextVersion}
-  return $nextVersion
-}
+```
+npm test
 ```
 
-BuildChanges.Tests.ps1
+All new tests should be configured with help of [runServerless](./utils/run-serverless.js) util - it's the only way to test functionality against completely intialized `serverless` instance, and it's the only scenario that reflects real world usage.
 
-```powershell
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -replace '\.Tests\.', '.'
-. "$here\$sut"
+Check documentation of `runServerless` at [@serverless/test/docs/run-serverless](https://github.com/serverless/test/blob/master/docs/run-serverless.md#run-serverless). Note that `runServerless` as configured at `./utils/run-serverless.js` supports two additional options (`fixture` and `configExt`), which provides out of a box setup to run _Serverless_ instance against prepared fixture with eventually extended service configuration
 
-Describe "BuildIfChanged" {
-  Context "When there are changes" {
-    Mock Get-Version {return 1.1}
-    Mock Get-NextVersion {return 1.2}
-    Mock Build {} -Verifiable -ParameterFilter {$version -eq 1.2}
+As `runServerless` tests are expensive, it's good to ensure a _minimal_ count of `runServerless` runs to test given scope of problems. Ideally with one service example we should cover most of the test cases we can (good example of such approach is [ALB health check tests](https://github.com/serverless/serverless/blob/80e70e7affd54418361c4d54bdef1561af6b8826/lib/plugins/aws/package/compile/events/alb/lib/healthCheck.test.js#L18-L127))
 
-    $result = BuildIfChanged
+### Existing test examples:
 
-      It "Builds the next version" {
-          Assert-VerifiableMocks
-      }
-      It "Returns the next version number" {
-          $result | Should Be 1.2
-      }
-    }
-  Context "When there are no changes" {
-    Mock Get-Version -MockWith {return 1.1}
-    Mock Get-NextVersion -MockWith {return 1.1}
-    Mock Build {}
+- [Run against config passed inline](https://github.com/serverless/serverless/blob/73107822945a878abbdebe2309e8e9d87cc2858a/lib/plugins/aws/package/lib/generateCoreTemplate.test.js#L11-L14)
+- [Run against preprepared fixture](https://github.com/serverless/serverless/blob/74634c3317a116077a008375e20d6a5b99b1256e/lib/plugins/aws/package/compile/functions/index.test.js#L2605-L2608)
+  - Fixtures can be [extended](https://github.com/serverless/serverless/blob/74634c3317a116077a008375e20d6a5b99b1256e/lib/plugins/aws/package/compile/events/httpApi/index.test.js#L95-L99) on spot. Whenever possible it's better to extend existing fixture (e.g. basic `function`) instead of creating new one (check [ALB health check tests](https://github.com/serverless/serverless/blob/80e70e7affd54418361c4d54bdef1561af6b8826/lib/plugins/aws/package/compile/events/alb/lib/healthCheck.test.js) for good example on such approach)
+  - If needed introduce new test fixtures at [test/fixtures](./fixtures)
 
-    $result = BuildIfChanged
+Example of test files fully backed by `runServerless`:
 
-      It "Should not build the next version" {
-          Assert-MockCalled Build -Times 0 -ParameterFilter {$version -eq 1.1}
-      }
-    }
-}
+- [lib/plugins/aws/package/compile/events/httpApi.js](https://github.com/serverless/serverless/blob/master/lib/plugins/aws/package/compile/events/httpApi.js)
+
+If we're about to add new tests to an existing test file with tests written old way, then best is to create another `describe` block for new tests at the bottom (as it's done [here](https://github.com/serverless/serverless/blob/74634c3317a116077a008375e20d6a5b99b1256e/lib/plugins/aws/package/compile/functions/index.test.js#L2602))
+
+_Note: PR's which rewrite existing tests into new method are very welcome! (but, ideally each PR should cover single test file rewrite)_
+
+### Coverage
+
+We aim for a (near) 100% test coverage, so make sure your tests cover as much of your code as possible.
+
+During development, you can easily check coverage by running `npm run coverage`, then opening the `index.html` file inside the `coverage` directory.
+
+## AWS Integration tests
+
+Run all tests via:
+
+```
+AWS_ACCESS_KEY_ID=XXX AWS_SECRET_ACCESS_KEY=xxx npm run integration-test-run-all
 ```
 
-Running Tests
--------------
-    C:\PS> Invoke-Pester
+_Note: Home folder is mocked for test run, therefore relying on `AWS_PROFILE` won't work. _ and _secret key_, need to be configured directly into env variables\_
 
-This will run all tests inside of files named `*.Tests.ps1` recursively from the current directory and print a report of all failing and passing test results to the console.
+_Note: Some integration tests depend on shared infrastructure stack (see below)_
 
-    C:\PS> Invoke-Pester -TestName BuildIfChanged
+Ideally any feature that integrates with AWS functionality should be backed by integration test.
 
-You can also run specific tests by using the `-TestName` parameter of the `Invoke-Pester` command. The above example runs all tests with a `Describe` block named `BuildIfChanged`. If you want to run multiple tests, you can pass a string array into the `-TestName` parameter, similar to the following example:
+Check existing set of AWS integration tests at [test/integration](./integration)
 
-    C:\PS> Invoke-Pester -TestName BuildIfChanged, BaconShouldBeCrispy
+### Running specific integration test
 
-Continuous Integration with Pester
------------------------------------
+Pass test file to Mocha directly as follows
 
-Pester integrates well with almost any build automation solution.  There are several options for this integration:
+```
+AWS_ACCESS_KEY_ID=XXX AWS_SECRET_ACCESS_KEY=xxx npx mocha tests/integration/{chosen}.test.js
+```
 
-- The `-OutputFile` parameter allows you to export data about the test execution.  Currently, this parameter allows you to produce NUnit-style XML output, which any modern CI solution should be able to read.
-- The `-PassThru` parameter can be used if your CI solution supports running PowerShell code directly.  After Pester finishes running, check the FailedCount property on the object to determine whether any tests failed, and take action from there.
-- The `-EnableExit` switch causes Pester to exit the current PowerShell session with an error code. This error code will be the number of failed tests; 0 indicates success.
+### Tests that depend on shared infrastructure stack
 
-As an example, there is also a file named `Pester.bat` in the `bin` folder which shows how you might integrate with a CI solution that does not support running PowerShell directly.  By wrapping a call to `Invoke-Pester` in a batch file, and making sure that batch file returns a non-zero exit code if any tests fail, you can still use Pester even when limited to cmd.exe commands in your CI jobs.
+Due to the fact that some of the tests require a bit more complex infrastructure setup which might be lengthy, two additional commands has been made available:
 
-Whenever possible, it's better to run Invoke-Pester directly (either in an interactive PowerShell session, or using CI software that supports running PowerShell steps in jobs). This is the method that we test and support in our releases.
+- `integration-test-setup-infrastructure` - used for setting up all needed intrastructure dependencies
+- `integration-test-teardown-infrastructure` - used for tearing down the infrastructure setup by the above command
 
-For Further Learning:
------------------------------------
-* [Getting started with Pester](http://www.powershellmagazine.com/2014/03/12/get-started-with-pester-powershell-unit-testing-framework/)
-* [Testing your scripts with Pester, Assertions and more](http://www.powershellmagazine.com/2014/03/27/testing-your-powershell-scripts-with-pester-assertions-and-more/)
-* [Pester Wiki](https://github.com/pester/Pester/wiki)
-* [Google Discussion Group](https://groups.google.com/forum/?fromgroups#!forum/pester)
-* `C:\PS> Import-Module ./pester.psm1; Get-Help about_pester`
-* Microsoft's PowerShell test suite itself is being converted into Pester tests. [See the PowerShell-Tests repository.](https://github.com/PowerShell/PowerShell-Tests)
-* Note: The following two links were for Pester v1.0.  The syntax shown, particularly for performing assertions with Should, is no longer applicable to later versions of Pester.
-    * [powershell-bdd-testing-pester-screencast](http://scottmuc.com/blog/development/powershell-bdd-testing-pester-screencast/)
-    * [pester-bdd-for-the-system-administrator](http://scottmuc.com/blog/development/pester-bdd-for-the-system-administrator/)
+Such tests take advantage of `isDependencyStackAvailable` util to check if all needed dependencies are ready. If not, it skips the given test suite.
+
+Examples of such tests:
+
+- [MSK](./integration/infra-dependent/msk.test.js)
+
+## Testing templates
+
+If you add a new template or want to test a template after changing it you can run the template integration tests. Make sure you have `docker` and `docker-compose` installed as they are required. The `docker` containers we're using through compose are automatically including your `$HOME/.aws` folder so you can deploy to AWS.
+
+To run all integration tests run:
+
+```
+./test/templates/test-all-templates
+```
+
+To run only a specific integration test run:
+
+```
+tests/templates/integration-test-template TEMPLATE_NAME BUILD_COMMAND
+```
+
+so for example:
+
+```
+tests/templates/integration-test-template aws-java-maven mvn package
+```
+
+If you add a new template make sure to add it to the `test-all-templates` file and configure the `docker-compose.yml` file for your template.
